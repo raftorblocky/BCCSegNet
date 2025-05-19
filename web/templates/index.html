@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pengamatan Tutupan Awan</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo-container">
+          <img
+            src="{{ url_for('static', filename='img/Logo STMKG.png') }}"
+            alt="Logo 1"
+            class="logo-left"
+          />
+          <h1>SISTEM PENGAMATAN TUTUPAN AWAN</h1>
+          <img
+            src="{{ url_for('static', filename='img/BMG_2003.png') }}"
+            alt="Logo 2"
+            class="logo-right"
+          />
+        </div>
+      </header>
+
+      <main>
+        <div class="info-box">
+          <h2>Informasi Sistem</h2>
+          <div class="divider"></div>
+
+          <div class="info-item">
+            <span class="label">Tutupan Awan</span>
+            <span class="sub-label">(Cloud Cover)</span>
+            <span class="value" id="cloud-cover">-</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Status Langit</span>
+            <span class="sub-label">(Sky Condition)</span>
+            <span class="value" id="sky-condition">-</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Tingkat Kepercayaan</span>
+            <span class="sub-label">(Confidence Score)</span>
+            <span class="value" id="confidence">-</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="footer-info">
+            <p id="last-captured">Last Captured : -</p>
+            <p>-7.145, 112.512 / Tangerang, Indonesia</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="image-metadata">
+            <p>Image Metadata :</p>
+            <p>Arducam STARVIS B0425 2MP Camera</p>
+            <p id="metadata">1080x1080, 1.1mm, f/2.2, -, ISO -</p>
+          </div>
+        </div>
+
+        <div class="image-preview">
+          <h2>Preview Citra</h2>
+          <div class="divider"></div>
+          <img
+            id="latest-image"
+            src="{{ url_for('static', filename='img/latest_capture.jpg') }}"
+            alt="Cloud Cover Image"
+          />
+        </div>
+      </main>
+
+      <footer>
+        <p>Developed by Adhitya R. F.</p>
+        <p>Copyright 2025 © Program Studi Instrumentasi-MKG</p>
+        <p>Sekolah Tinggi Meteorologi Klimatologi dan Geofisika</p>
+      </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
