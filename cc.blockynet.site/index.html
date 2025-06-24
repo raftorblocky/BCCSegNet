@@ -4,26 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pengamatan Tutupan Awan</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
+    <link rel="stylesheet" href="static/style.css" />
+    <link rel="icon" href="static/img/favicon.ico" type="image/x-icon" />
   </head>
   <body>
     <div class="container">
       <header>
         <div class="logo-container">
-          <img
-            src="{{ url_for('static', filename='img/Logo STMKG.png') }}"
-            alt="Logo 1"
-            class="logo-left"
-          />
+          <img src="static/img/Logo STMKG.png" alt="Logo 1" class="logo-left" />
           <h1>SISTEM PENGAMATAN TUTUPAN AWAN</h1>
-          <img
-            src="{{ url_for('static', filename='img/BMG_2003.png') }}"
-            alt="Logo 2"
-            class="logo-right"
-          />
+          <img src="static/img/Logo BMKG.png" alt="Logo 2" class="logo-right" />
         </div>
       </header>
 
@@ -71,7 +61,7 @@
           <div class="divider"></div>
           <img
             id="latest-image"
-            src="{{ url_for('static', filename='img/latest_capture.jpg') }}"
+            src="static/img/latest_capture.jpg"
             alt="Cloud Cover Image"
           />
         </div>
@@ -84,6 +74,6 @@
       </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="static/script.js"></script>
   </body>
 </html>
