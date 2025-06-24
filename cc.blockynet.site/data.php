@@ -18,7 +18,7 @@ if ($conn->connect_error) {
 
 // Ambil data klasifikasi terbaru
 $sql = "SELECT 
-            c.cloud_cover, c.sky_status, c.confidence_score, c.cloud_okta,
+            c.cloud_cover, c.sky_status, c.cloud_okta,
             i.capture_time, i.resolution, i.focal_length, i.aperture, i.shutter_speed, i.iso
         FROM Classifications c
         JOIN Images i ON i.image_id = c.image_id
@@ -30,7 +30,6 @@ if ($row = $result->fetch_assoc()) {
         "cloud_cover" => $row["cloud_cover"],
         "cloud_okta" => $row["cloud_okta"],
         "sky_condition" => $row["sky_status"],
-        "confidence_score" => $row["confidence_score"],
         "timestamp" => $row["capture_time"],
         "metadata" => "{$row['resolution']}, {$row['focal_length']}mm, {$row['aperture']}, {$row['shutter_speed']}, ISO {$row['iso']}"
     ]);

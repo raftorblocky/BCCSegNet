@@ -8,10 +8,10 @@ function updateData() {
       }
 
       document.getElementById("cloud-cover").textContent =
+        data.cloud_cover + "%";
+      document.getElementById("cloud-okta").textContent =
         data.cloud_okta + " Okta";
       document.getElementById("sky-condition").textContent = data.sky_condition;
-      document.getElementById("confidence").textContent =
-        data.confidence_score + "%";
       document.getElementById("last-captured").textContent =
         "Last Captured : " + data.timestamp;
       document.getElementById("metadata").textContent = data.metadata;

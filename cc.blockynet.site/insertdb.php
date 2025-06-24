@@ -16,7 +16,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 $required_fields = ['file_path', 'latitude', 'longitude', 'altitude',
     'camera_model', 'resolution', 'aperture', 'focal_length',
     'shutter_speed', 'iso',
-    'cloud_cover', 'cloud_okta', 'sky_status', 'confidence_score'];
+    'cloud_cover', 'cloud_okta', 'sky_status'];
 
 foreach ($required_fields as $field) {
     if (!isset($data[$field])) {
@@ -64,15 +64,14 @@ $image_id = $stmt1->insert_id;
 
 // Insert ke tabel Classifications
 $stmt2 = $conn->prepare("INSERT INTO Classifications (
-    image_id, cloud_cover, cloud_okta, sky_status, confidence_score
-) VALUES (?, ?, ?, ?, ?)");
+    image_id, cloud_cover, cloud_okta, sky_status
+) VALUES (?, ?, ?, ?)");
 
-$stmt2->bind_param("idisd",
+$stmt2->bind_param("idis",
     $image_id,
     $data['cloud_cover'],
     $data['cloud_okta'],
-    $data['sky_status'],
-    $data['confidence_score']
+    $data['sky_status']
 );
 
 if (!$stmt2->execute()) {

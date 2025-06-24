@@ -1,19 +1,15 @@
-# segmentation_module.py
-"""
-segmentation_module.py
-Performs Vd pre-check and TFLite inference to produce label masks and confidence.
-"""
 import numpy as np
 import cv2
 import tflite_runtime.interpreter as tflite
-from utils import compute_vd, mask_feature, create_roi_mask, compute_cloud_cover
+from utils import compute_vd, mask_feature, create_roi_mask
 
 MODEL_DAY_PATH = './model/model_day.tflite'
 MODEL_NIGHT_PATH = './model/model_night.tflite'
 
-CLOUD_COVER_THRESHOLD = 60.0   # percent
-BRIGHTNESS_THRESHOLD = 160.0   # detects overcast brightness
-
+ROI_BIG_RADIUS = 500
+ROI_SMALL_RADIUS = 300
+FALLBACK_UNDEF_MIN_COUNT = 100
+KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
 def _load_interpreter(path: str):
     interp = tflite.Interpreter(model_path=path)
@@ -25,51 +21,51 @@ _interp_night, inp_night, out_night = _load_interpreter(MODEL_NIGHT_PATH)
 _, D_H, D_W, _ = inp_day['shape']
 _, N_H, N_W, _ = inp_night['shape']
 
-
-def segment_image(image_path: str, mode: str = 'day') -> tuple:
-    """
-    Returns (label_mask, confidence).
-    confidence: average max-softmax over ROI (%) or None if threshold branch.
-    """
+def segment_image(image_path: str, mode: str = 'day') -> np.ndarray:
     img = cv2.imread(image_path)
     if img is None:
         raise FileNotFoundError(f"Cannot read image: {image_path}")
 
-    roi_mask = create_roi_mask(img.shape)
+    h_full, w_full = img.shape[:2]
+    roi_big_full = create_roi_mask(img.shape, ROI_BIG_RADIUS)
+    roi_small_full = create_roi_mask(img.shape, ROI_SMALL_RADIUS)
 
     if mode == 'day':
-        # Pre-check
+        interp, inp_i, out_i, TW, TH = _interp_day, inp_day, out_day, D_W, D_H
+    else:
+        interp, inp_i, out_i, TW, TH = _interp_night, inp_night, out_night, N_W, N_H
+
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    inp_buf = cv2.resize(rgb, (TW, TH)).astype(np.float32) / 255.0
+    inp_buf = np.expand_dims(inp_buf, 0)
+    interp.set_tensor(inp_i['index'], inp_buf)
+    interp.invoke()
+    out = interp.get_tensor(out_i['index'])[0]
+    label_model = np.argmax(out, axis=-1).astype(np.uint8)
+    Hm, Wm = label_model.shape
+
+    roi_big = cv2.resize(roi_big_full, (Wm, Hm), interpolation=cv2.INTER_NEAREST)
+    roi_small = cv2.resize(roi_small_full, (Wm, Hm), interpolation=cv2.INTER_NEAREST)
+
+    if mode != 'day':
+        label_full = cv2.resize(label_model, (w_full, h_full), interpolation=cv2.INTER_NEAREST)
+        return label_full
+
+    undef_mask = (label_model == 2).astype(np.uint8) * 255
+    undef_mask = cv2.morphologyEx(undef_mask, cv2.MORPH_OPEN, KERNEL)
+    undef_mask = cv2.morphologyEx(undef_mask, cv2.MORPH_CLOSE, KERNEL)
+    num_undef = int(np.count_nonzero((undef_mask == 255) & (roi_small == 255)))
+
+    if num_undef >= FALLBACK_UNDEF_MIN_COUNT:
         vd = compute_vd(img)
         mask_vd = mask_feature(vd)
-        mask_vd = cv2.bitwise_and(mask_vd, mask_vd, mask=roi_mask)
-        cov = np.count_nonzero(mask_vd) / max(np.count_nonzero(roi_mask),1) *100
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        mean_b = np.mean(gray[roi_mask==255])
-        print(f"[pre-check] cover={cov:.1f}%, brightness={mean_b:.1f}")
-        if cov <= CLOUD_COVER_THRESHOLD and mean_b < BRIGHTNESS_THRESHOLD:
-            label = np.full(mask_vd.shape, 2, dtype=np.uint8)
-            inside = roi_mask==255
-            label[inside & (mask_vd==255)] = 0
-            label[inside & (mask_vd==0)] = 1
-            return label, None
-        interp, inp_det, out_det, TW, TH = _interp_day, inp_day, out_day, D_W, D_H
-    else:
-        interp, inp_det, out_det, TW, TH = _interp_night, inp_night, out_night, N_W, N_H
+        mask_vd = cv2.morphologyEx(mask_vd, cv2.MORPH_OPEN, KERNEL)
+        mask_vd = cv2.morphologyEx(mask_vd, cv2.MORPH_CLOSE, KERNEL)
+        valid_mask = (cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) > 10)
+        label_thresh_full = np.full((h_full, w_full), 2, dtype=np.uint8)
+        label_thresh_full[(valid_mask) & (mask_vd == 255)] = 0
+        label_thresh_full[(valid_mask) & (mask_vd == 0)] = 1
+        return label_thresh_full
 
-    # Inference
-    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    inp = cv2.resize(rgb, (TW, TH)).astype(np.float32)/255.0
-    inp = np.expand_dims(inp,0)
-    interp.set_tensor(inp_det['index'], inp)
-    interp.invoke()
-    out = interp.get_tensor(out_det['index'])[0]
-    label_mask = np.argmax(out, axis=-1).astype(np.uint8)
-
-    # Confidence
-    if label_mask.shape != roi_mask.shape:
-        roi_small = cv2.resize(roi_mask,(label_mask.shape[1],label_mask.shape[0]),cv2.INTER_NEAREST)
-    else:
-        roi_small = roi_mask
-    maxp = np.max(out,axis=-1)
-    conf = np.mean(maxp[roi_small==255])*100
-    return label_mask, conf
+    label_full = cv2.resize(label_model, (w_full, h_full), interpolation=cv2.INTER_NEAREST)
+    return label_full
