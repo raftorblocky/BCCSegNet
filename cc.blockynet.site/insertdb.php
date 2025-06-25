@@ -13,7 +13,7 @@ $database = "blockyne_cloud";
 $data = json_decode(file_get_contents("php://input"), true);
 
 // Validasi field yang wajib ada
-$required_fields = ['file_path', 'latitude', 'longitude', 'altitude',
+$required_fields = ['file_path', 'capture_time', 'latitude', 'longitude',
     'camera_model', 'resolution', 'aperture', 'focal_length',
     'shutter_speed', 'iso',
     'cloud_cover', 'cloud_okta', 'sky_status'];
@@ -36,16 +36,16 @@ if ($conn->connect_error) {
 
 // Insert ke tabel Images
 $stmt1 = $conn->prepare("INSERT INTO Images (
-    file_path, capture_time, latitude, longitude, altitude,
+    file_path, capture_time, latitude, longitude,
     camera_model, resolution, aperture, focal_length,
     shutter_speed, iso
-) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-$stmt1->bind_param("sddissssss",
+$stmt1->bind_param("sssissssss",
     $data['file_path'],
+    $data['capture_time'],
     $data['latitude'],
     $data['longitude'],
-    $data['altitude'],
     $data['camera_model'],
     $data['resolution'],
     $data['aperture'],

@@ -24,10 +24,10 @@ time.sleep(1)  # warm-up
 
 def set_camera_mode(now: datetime) -> str:
     if 6 <= now.hour < 18:
-        picam.set_controls({'AnalogueGain': 4.0, 'ExposureTime': 1000000})
+        picam.set_controls({'AnalogueGain': 1.0, 'ExposureTime': 100})
         mode = 'day'
     else:
-        picam.set_controls({'AnalogueGain': 4.0, 'ExposureTime': 1000000})
+        picam.set_controls({'AnalogueGain': 2.0, 'ExposureTime': 1000000})
         mode = 'night'
     time.sleep(1)
     return mode

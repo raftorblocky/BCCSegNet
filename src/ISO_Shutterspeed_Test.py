@@ -8,8 +8,8 @@ config = picam.create_still_configuration()
 picam.configure(config)
 
 # ======== ATUR PARAMETER DI SINI ========
-ISO_VALUE = 8.0                   # Contoh: 1.0 = ISO 100, 2.0 = ISO 200, 4.0 = ISO 400
-EXPOSURE_MICROSECONDS = 2000000   # Contoh: 1.000.000 �s = 1 detik exposure
+ISO_VALUE = 1.0                   # Contoh: 1.0 = ISO 100, 2.0 = ISO 200, 4.0 = ISO 400
+EXPOSURE_MICROSECONDS = 100   # Contoh: 1.000.000 �s = 1 detik exposure
 # =========================================
 
 # Set pengaturan manual

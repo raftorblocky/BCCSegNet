@@ -2,6 +2,8 @@ import os
 import time
 import json
 import threading
+import sys
+sys.stdout.reconfigure(line_buffering=True)
 from datetime import datetime, timezone
 import cv2
 import requests
@@ -95,11 +97,12 @@ def main():
             now_utc = datetime.now(timezone.utc)
             minute = now_utc.minute
             now_local = now_utc.astimezone()
+            capture_time_str = now_local.strftime("%Y-%m-%d %H:%M:%S")
 
             # Capture pada setiap menit kelipatan 10 
             if minute % 10 == 0 and minute != last_capture_min:
                 last_capture_min = minute
-
+                mode = set_camera_mode(now_local)
                 raw_path, ts = capture_and_crop(now_local)
                 last_raw_path = raw_path
                 last_ts = ts
@@ -135,10 +138,10 @@ def main():
                         iso = "400" #configurable
                     # Compose data payload
                     db_data = {
-                        "file_path": raw_path,
+                        "file_path": last_raw_path,
+                        "capture_time": capture_time_str,
                         "latitude": -7.145,    #configurable
                         "longitude": 112.510,  #configurable
-                        "altitude": 30,        #configurable
                         "camera_model": "Arducam B0425 Lens Moded",
                         "resolution": "1080x1080",
                         "aperture": "f/2.2",
