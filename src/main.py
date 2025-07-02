@@ -19,8 +19,8 @@ RAW_ROOT = './images/raw'
 CAPTURE_INTERVAL_MIN = 10  # 10 minutes
 LOG_PATH = "unsent_logs.jsonl"
 API_URL = "https://cc.blockynet.site/insertdb.php"
+UPLOAD_URL = "https://cc.blockynet.site/uploadimg.php"
 
-# === LOGGING FUNCTIONS ===
 def save_log_locally(data, path=LOG_PATH):
     with open(path, "a") as f:
         f.write(json.dumps(data) + "\n")
@@ -58,23 +58,24 @@ def resend_unsent_logs(url=API_URL, log_path=LOG_PATH):
                     print(f"Malformed log line: {e}")
         with open(log_path, "w") as f:
             f.writelines(new_lines)
-        time.sleep(120)  # Sleep 2 menit sebelum cek lagi
+        time.sleep(120)
 
-def upload_raw_image(raw_path, upload_url="https://cc.blockynet.site/uploadimg.php"):
+def upload_image(image_path, type_str, date_str, upload_url=UPLOAD_URL):
     try:
-        # Pakai nama file fixed 'latest_capture.jpg'
-        with open(raw_path, "rb") as imgf:
-            files = {"image": ("latest_capture.jpg", imgf, "image/jpeg")}
-            response = requests.post(upload_url, files=files, timeout=10)
-        if response.status_code == 200 and "Upload berhasil" in response.text:
-            print(f"Raw image uploaded as latest_capture.jpg")
-            return True
+        file_name = os.path.basename(image_path)
+        with open(image_path, "rb") as imgf:
+            files = {"image": (file_name, imgf, "image/jpeg")}
+            data = {"type": type_str, "date": date_str}
+            response = requests.post(upload_url, files=files, data=data, timeout=20)
+        if response.status_code == 200 and "Upload sukses" in response.text:
+            print(f"Uploaded {type_str} image: {file_name}")
+            return f"images/{type_str}/{date_str}/{file_name}"
         else:
-            print(f"Failed to upload image: {response.text}")
-            return False
+            print(f"Failed to upload {type_str} image: {response.text}")
+            return None
     except Exception as e:
         print(f"Exception during upload: {e}")
-        return False
+        return None
 
 def main():
     now_local_init = datetime.now().astimezone()
@@ -93,11 +94,11 @@ def main():
 
     try:
         while True:
-
             now_utc = datetime.now(timezone.utc)
             minute = now_utc.minute
             now_local = now_utc.astimezone()
             capture_time_str = now_local.strftime("%Y-%m-%d %H:%M:%S")
+            date_str = now_local.strftime('%Y%m%d')
 
             # Capture pada setiap menit kelipatan 10 
             if minute % 10 == 0 and minute != last_capture_min:
@@ -108,11 +109,13 @@ def main():
                 last_ts = ts
                 print(f"Captured image at {now_local.strftime('%Y-%m-%d %H:%M:%S %Z')} local ({now_utc.strftime('%H:%M UTC')})")
 
+                # === Upload RAW IMAGE ===
+                raw_file_path_web = upload_image(last_raw_path, "raw", date_str)
+
                 # Segmentasi pada menit 0 dan 30 UTC
                 if minute in (0, 30) and (last_seg_hour != (now_utc.hour, minute)):
                     last_seg_hour = (now_utc.hour, minute)
                     mode = set_camera_mode(now_local)
-                    date_str = now_local.strftime('%Y%m%d')
                     seg_dir = os.path.join(SEG_ROOT, date_str)
                     os.makedirs(seg_dir, exist_ok=True)
 
@@ -120,8 +123,12 @@ def main():
                     label_mask = segment_image(last_raw_path, mode)
                     color_mask = label_to_color(label_mask)
                     overlay = draw_roi_boundary(color_mask)
-                    seg_path = os.path.join(seg_dir, f"seg_{last_ts}.png")
+                    seg_name = f"seg_{last_ts}.png"
+                    seg_path = os.path.join(seg_dir, seg_name)
                     cv2.imwrite(seg_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+                    
+                    # === Upload SEGMENTED IMAGE ===
+                    seg_file_path_web = upload_image(seg_path, "segmented", date_str)
 
                     cover = compute_cloud_cover(label_mask)
                     okta = percent_to_okta(cover)
@@ -129,19 +136,18 @@ def main():
                     msg = f"[{mode.upper()}][{now_local.strftime('%H:%M %Z')}]: Cloud cover={cover:.2f}%"
                     print(msg)
 
-                    # === Data ready for DB/API ===
                     if mode == 'day':
-                        shutter_speed = "1/10000s" #configurable
-                        iso = "100" #configurable
+                        shutter_speed = "1/10000s"
+                        iso = "100"
                     else:
-                        shutter_speed = "2s" #configurable
-                        iso = "200" #configurable
-                    # Compose data payload
+                        shutter_speed = "2s"
+                        iso = "200"
+
                     db_data = {
-                        "file_path": last_raw_path,
+                        "file_path": raw_file_path_web,
                         "capture_time": capture_time_str,
-                        "latitude": -6.123,    #configurable
-                        "longitude": 106.679,  #configurable
+                        "latitude": -6.123,
+                        "longitude": 106.679,
                         "camera_model": "Arducam B0425 Lens Moded",
                         "resolution": "1080x1080",
                         "aperture": "f/2.2",
@@ -152,9 +158,7 @@ def main():
                         "cloud_okta": okta,
                         "sky_status": sky_status
                     }
-                    # Attempt to send, log if fail
                     send_to_db(db_data)
-                    upload_raw_image(last_raw_path)
             time.sleep(30)
     except KeyboardInterrupt:
         print("Interrupted by user. Exiting.")
