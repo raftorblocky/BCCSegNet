@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 
 # Default ROI radius in pixels
-default_ROI_RADIUS = 500
+default_ROI_RADIUS = 480
 
 # RGB color map for labels
 COLOR_MAP = {

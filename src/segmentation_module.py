@@ -6,7 +6,7 @@ from utils import compute_vd, mask_feature, create_roi_mask
 MODEL_DAY_PATH = './model/model_day.tflite'
 MODEL_NIGHT_PATH = './model/model_night.tflite'
 
-ROI_BIG_RADIUS = 500
+ROI_BIG_RADIUS = 480
 ROI_SMALL_RADIUS = 300
 FALLBACK_UNDEF_MIN_COUNT = 100
 KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))

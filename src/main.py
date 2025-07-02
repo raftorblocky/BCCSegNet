@@ -131,17 +131,17 @@ def main():
 
                     # === Data ready for DB/API ===
                     if mode == 'day':
-                        shutter_speed = "1/1000s" #configurable
+                        shutter_speed = "1/10000s" #configurable
                         iso = "100" #configurable
                     else:
-                        shutter_speed = "1/10s" #configurable
-                        iso = "400" #configurable
+                        shutter_speed = "2s" #configurable
+                        iso = "200" #configurable
                     # Compose data payload
                     db_data = {
                         "file_path": last_raw_path,
                         "capture_time": capture_time_str,
-                        "latitude": -7.145,    #configurable
-                        "longitude": 112.510,  #configurable
+                        "latitude": -6.123,    #configurable
+                        "longitude": 106.679,  #configurable
                         "camera_model": "Arducam B0425 Lens Moded",
                         "resolution": "1080x1080",
                         "aperture": "f/2.2",
