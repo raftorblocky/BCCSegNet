@@ -1,4 +1,4 @@
-# Cloud Cover Classification System Using All-Sky Camera and CNN MobileNetV3
+# Blocky Cloud Cover Segmentation Network
 
 ## 📌 Project Description
 
