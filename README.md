@@ -1,4 +1,4 @@
-# Blocky Cloud Cover Segmentation Network
+# Blocky's Cloud Cover Segmentation Network
 
 ## 📌 Project Description
 
